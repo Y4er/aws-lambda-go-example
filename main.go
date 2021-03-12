@@ -1,4 +1,4 @@
-package main
+package netlify
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 )
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -27,7 +28,15 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		request.QueryStringParameters["id"],
 		imgpath,
 	)
-	resp, err := http.Get("https://y4er.com" + imgpath)
+	client := &http.Client{
+		Timeout: 2 * time.Second,
+	}
+
+	req, _ := http.NewRequest("GET", "https://y4er.com" + imgpath, nil)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36")
+	req.Header.Set("Referer", "https://y4er.com" + imgpath)
+
+	resp, err := client.Do(req)
 	if err != nil {
 		body = err.Error()
 	}else{
