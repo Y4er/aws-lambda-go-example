@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
@@ -37,7 +38,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		body = err.Error()
 	} else {
 		bytes, _ := ioutil.ReadAll(resp.Body)
-		body = string(bytes)
+		body = base64.StdEncoding.EncodeToString(bytes)
 	}
 
 	return events.APIGatewayProxyResponse{
@@ -45,7 +46,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		Headers:           map[string]string{"Content-Type": "image/png"},
 		MultiValueHeaders: http.Header{"Set-Cookie": {"Ding", "Ping"}},
 		Body:              body,
-		IsBase64Encoded:   false,
+		IsBase64Encoded:   true,
 	}, nil
 }
 
