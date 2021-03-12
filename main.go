@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"io/ioutil"
 	"net/http"
 	"strings"
 )
@@ -19,15 +20,24 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		path,
 		"/img/uploads",
 	)
+	imgpath:=path[index:]
 	body := fmt.Sprintf(
 		"Path:%s\nID:%s\nIMG:%s",
 		path,
 		request.QueryStringParameters["id"],
-		path[index:],
+		imgpath,
 	)
+	resp, err := http.Get("https://y4er.com" + imgpath)
+	if err != nil {
+		body = err.Error()
+	}else{
+		bytes, _ := ioutil.ReadAll(resp.Body)
+		body = string(bytes)
+	}
+
 	return events.APIGatewayProxyResponse{
 		StatusCode:        200,
-		Headers:           map[string]string{"Content-Type": "text/plain"},
+		Headers:           map[string]string{"Content-Type": "image/png"},
 		MultiValueHeaders: http.Header{"Set-Cookie": {"Ding", "Ping"}},
 		Body:              body,
 		IsBase64Encoded:   false,
