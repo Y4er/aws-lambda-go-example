@@ -1,4 +1,4 @@
-package main
+package netlify
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}
 
 	req, _ := http.NewRequest("GET", "https://y4er.com"+imgpath, nil)
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36")
+	req.Header.Set("User-Agent", "netlify")
 	req.Header.Set("Referer", "https://y4er.com"+imgpath)
 
 	resp, err := client.Do(req)
