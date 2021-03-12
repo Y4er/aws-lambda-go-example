@@ -8,7 +8,7 @@ import (
 )
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	fmt.Println("years old.")
+	fmt.Println(request.QueryStringParameters["id"])
 	return events.APIGatewayProxyResponse{
 		StatusCode:        200,
 		Headers:           map[string]string{"Content-Type": "text/plain"},
