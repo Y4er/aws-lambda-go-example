@@ -38,8 +38,9 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	req.Header.Set("Referer", "https://y4er.com"+imgpath)
 
 	resp, err := client.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
-		body = err.Error()
+		body = base64.StdEncoding.EncodeToString([]byte(err.Error()))
 	} else {
 		bs, _ := ioutil.ReadAll(resp.Body)
 		timestamp := time.Now().Unix()
@@ -51,9 +52,13 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		if err != nil {
 			body = err.Error()
 		} else {
-			w.MarkFile(filename)
+			err := w.MarkFile(filename)
+			if err != nil {
+				body = base64.StdEncoding.EncodeToString([]byte(err.Error()))
+			}
 			content, _ := ioutil.ReadFile(filename)
 			body = base64.StdEncoding.EncodeToString(content)
+			fmt.Println(body)
 		}
 	}
 	return events.APIGatewayProxyResponse{
