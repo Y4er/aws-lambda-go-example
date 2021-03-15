@@ -1,12 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/issue9/watermark"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 )
@@ -26,7 +30,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		imgpath,
 	)
 	client := &http.Client{
-		Timeout: 2 * time.Second,
+		Timeout: 5 * time.Second,
 	}
 
 	req, _ := http.NewRequest("GET", "https://y4er.com"+imgpath, nil)
@@ -37,10 +41,21 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	if err != nil {
 		body = err.Error()
 	} else {
-		bytes, _ := ioutil.ReadAll(resp.Body)
-		body = base64.StdEncoding.EncodeToString(bytes)
+		bs, _ := ioutil.ReadAll(resp.Body)
+		timestamp := time.Now().Unix()
+		filename := fmt.Sprintf("%s", timestamp)
+		file, _ := os.Create(filename)
+		io.Copy(file, bytes.NewReader(bs))
+		defer file.Close()
+		w, err := watermark.New("watermark.png", 2, watermark.BottomRight)
+		if err != nil {
+			body = err.Error()
+		} else {
+			w.MarkFile(filename)
+			content, _ := ioutil.ReadFile(filename)
+			body = base64.StdEncoding.EncodeToString(content)
+		}
 	}
-
 	return events.APIGatewayProxyResponse{
 		StatusCode:        200,
 		Headers:           map[string]string{"Content-Type": "image/png"},
