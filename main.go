@@ -51,22 +51,26 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		w, err := watermark.New("watermark.png", 2, watermark.BottomRight)
 		if err != nil {
 			body = err.Error()
+			fmt.Println(body)
 		} else {
 			err := w.MarkFile(filename)
 			if err != nil {
-				body = base64.StdEncoding.EncodeToString([]byte(err.Error()))
+				body = err.Error()
+				fmt.Println(body)
+				//body = base64.StdEncoding.EncodeToString([]byte(err.Error()))
+			} else {
+				content, _ := ioutil.ReadFile(filename)
+				body = base64.StdEncoding.EncodeToString(content)
+				fmt.Println(body)
 			}
-			content, _ := ioutil.ReadFile(filename)
-			body = base64.StdEncoding.EncodeToString(content)
-			fmt.Println(body)
 		}
 	}
 	return events.APIGatewayProxyResponse{
 		StatusCode:        200,
-		Headers:           map[string]string{"Content-Type": "image/png"},
+		Headers:           map[string]string{"Content-Type": "text/plain"},
 		MultiValueHeaders: http.Header{"Set-Cookie": {"Ding", "Ping"}},
 		Body:              body,
-		IsBase64Encoded:   true,
+		IsBase64Encoded:   false,
 	}, nil
 }
 
