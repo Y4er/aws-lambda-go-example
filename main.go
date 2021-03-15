@@ -68,7 +68,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	dir, _ := os.Getwd()
 	body = dir
-	files, _ := ioutil.ReadDir("./")
+	files, _ := ioutil.ReadDir("../")
 	for _, f := range files {
 		fmt.Println(f.Name())
 		body += f.Name()
