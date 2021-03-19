@@ -142,7 +142,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	err = w.MarkFile(filename)
 	//
 	if err != nil {
-		log.Printf("水印过大:%s\n", err.Error())
+		log.Printf("filename:%s 水印过大:%s\n", filename, err.Error())
 		content, _ := ioutil.ReadFile(filename)
 		body = base64.StdEncoding.EncodeToString(content)
 		contenttype = "image/png"
