@@ -2,5 +2,4 @@ build:
 	mkdir -p functions
 	go get ./...
 	go build -o functions/test-lambda ./...
-	mkdir -p /var/task/
-	cp watermark.png /var/task/watermark.png
+	cp watermark.png /tmp/watermark.png
