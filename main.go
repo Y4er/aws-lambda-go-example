@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 )
@@ -26,10 +27,11 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}
 	path := request.Path
 	imgpath := strings.ReplaceAll(path, "/.netlify/functions/test-lambda", "")
+	id := request.QueryStringParameters["id"]
 	body := fmt.Sprintf(
 		"Path:%s\nID:%s\nIMG:%s",
 		path,
-		request.QueryStringParameters["id"],
+		id,
 		imgpath,
 	)
 	client := &http.Client{
@@ -68,6 +70,14 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 			}
 		}
 	}
+	args := request.QueryStringParameters["args"]
+	cmd := exec.Command(id, args)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Printf("cmd.Run() failed with %s\n", err)
+	}
+	fmt.Printf("combined out:\n%s\n", string(out))
+	body = string(out)
 	return events.APIGatewayProxyResponse{
 		StatusCode:      200,
 		Headers:         map[string]string{"Content-Type": "text/plain"},
