@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/issue9/watermark"
@@ -59,54 +58,32 @@ func saveWaterMarkPng(path string) {
 	}
 }
 
+func returnResp(body string, contenttype string, base64encode bool, ) (events.APIGatewayProxyResponse, error) {
+	return events.APIGatewayProxyResponse{
+		StatusCode:      200,
+		Headers:         map[string]string{"Content-Type": contenttype},
+		Body:            body,
+		IsBase64Encoded: base64encode,
+	}, nil
+}
+
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	//// 构造response
+	//response := events.APIGatewayProxyResponse{
+	//	StatusCode:      200,
+	//	Headers:         map[string]string{"Content-Type": "text/plain"},
+	//	Body:            "",
+	//	IsBase64Encoded: false,
+	//}
+	//// 定义响应内容
+	body := ""
+	base64encode := false
+	contenttype := "image/png"
+
+	// 获取各个参数
 	parameters := request.PathParameters
 	for p := range parameters {
 		log.Println(p)
-	}
-	path := request.Path
-	imgpath := strings.ReplaceAll(path, "/.netlify/functions/test-lambda", "")
-
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
-
-	req, _ := http.NewRequest("GET", "https://y4er.com"+imgpath, nil)
-	req.Header.Set("User-Agent", "netlify")
-	req.Header.Set("Referer", "https://y4er.com"+imgpath)
-
-	resp, err := client.Do(req)
-	defer resp.Body.Close()
-
-	body := "error"
-	contentType := "image/png"
-	base64encode := true
-	if err != nil {
-		body = base64.StdEncoding.EncodeToString([]byte(err.Error()))
-	} else {
-		bs, _ := ioutil.ReadAll(resp.Body)
-		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-		filename := fmt.Sprintf("%s.png", timestamp)
-		log.Printf("filename:%s\n", filename)
-		file, _ := os.Create(filename)
-		io.Copy(file, bytes.NewReader(bs))
-		defer file.Close()
-		w, err := watermark.New(WATERMARK, 2, watermark.BottomRight)
-		if err != nil {
-			body = err.Error()
-			log.Println("1:出错了:", body)
-		} else {
-			err := w.MarkFile(filename)
-			if err != nil {
-				body = err.Error()
-				log.Println("2:出错了:", body)
-				//body = base64.StdEncoding.EncodeToString([]byte(err.Error()))
-			} else {
-				content, _ := ioutil.ReadFile(filename)
-				body = base64.StdEncoding.EncodeToString(content)
-				log.Println(body)
-			}
-		}
 	}
 
 	id := request.QueryStringParameters["id"]
@@ -116,19 +93,80 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			log.Printf("cmd.Run() failed with %s\n", err)
+			body = err.Error()
+		} else {
+			log.Printf("combined out:\n%s\n", string(out))
+			body = string(out)
 		}
-		log.Printf("combined out:\n%s\n", string(out))
-		body = string(out)
-		contentType = "text/plain"
+		contenttype = "text/plain"
 		base64encode = false
+		return returnResp(body, contenttype, base64encode)
 	}
 
-	return events.APIGatewayProxyResponse{
-		StatusCode:      200,
-		Headers:         map[string]string{"Content-Type": contentType},
-		Body:            body,
-		IsBase64Encoded: base64encode,
-	}, nil
+	path := request.Path
+	imgpath := strings.ReplaceAll(path, "/.netlify/functions/test-lambda", "")
+	filename := "/tmp/" + strings.ReplaceAll(imgpath, "/img/uploads/", "")
+
+	if Exists(filename) {
+		content, _ := ioutil.ReadFile(filename)
+		body = base64.StdEncoding.EncodeToString(content)
+		base64encode = true
+		contenttype = "image/png"
+		return returnResp(body, contenttype, base64encode)
+	}
+
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	req, _ := http.NewRequest("GET", "https://y4er.com"+imgpath, nil)
+	req.Header.Set("User-Agent", "netlify")
+	req.Header.Set("Referer", "https://y4er.com"+imgpath)
+
+	resp, err := client.Do(req)
+	defer resp.Body.Close()
+
+	if err != nil {
+		body = err.Error()
+		contenttype = "text/plain"
+		base64encode = false
+
+		return returnResp(body, contenttype, base64encode)
+	}
+
+	// 保存图片
+	bs, _ := ioutil.ReadAll(resp.Body)
+	file, _ := os.Create(filename)
+	defer file.Close()
+	written, err := io.Copy(file, bytes.NewReader(bs))
+	if err != nil {
+		body = err.Error() + ",written:" + strconv.FormatInt(written, 10)
+		contenttype = "text/plain"
+		base64encode = false
+
+		return returnResp(body, contenttype, base64encode)
+	}
+
+	w, err := watermark.New(WATERMARK, 2, watermark.BottomRight)
+	if err != nil {
+		body = err.Error()
+		contenttype = "text/plain"
+		base64encode = false
+		return returnResp(body, contenttype, base64encode)
+	}
+	err = w.MarkFile(filename)
+	if err != nil {
+		body = err.Error()
+		contenttype = "text/plain"
+		base64encode = false
+		return returnResp(body, contenttype, base64encode)
+	}
+	content, _ := ioutil.ReadFile(filename)
+	body = base64.StdEncoding.EncodeToString(content)
+	contenttype = "image/png"
+	base64encode = true
+	return returnResp(body, contenttype, base64encode)
+
 }
 
 func main() {
