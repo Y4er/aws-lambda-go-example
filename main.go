@@ -60,7 +60,6 @@ func saveWaterMarkPng(path string) {
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	parameters := request.PathParameters
-	fmt.Println(len(parameters))
 	for p := range parameters {
 		log.Println(p)
 	}
@@ -86,19 +85,20 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	} else {
 		bs, _ := ioutil.ReadAll(resp.Body)
 		timestamp := time.Now().Unix()
-		filename := fmt.Sprintf("%s", timestamp)
+		filename := fmt.Sprintf("%s.png", timestamp)
+		log.Printf("filename:%v\n", filename)
 		file, _ := os.Create(filename)
 		io.Copy(file, bytes.NewReader(bs))
 		defer file.Close()
 		w, err := watermark.New("/tmp/watermark.png", 2, watermark.BottomRight)
 		if err != nil {
 			body = err.Error()
-			log.Println(body)
+			log.Println("1:出错了:", body)
 		} else {
 			err := w.MarkFile(filename)
 			if err != nil {
 				body = err.Error()
-				log.Println(body)
+				log.Println("2:出错了:", body)
 				//body = base64.StdEncoding.EncodeToString([]byte(err.Error()))
 			} else {
 				content, _ := ioutil.ReadFile(filename)
