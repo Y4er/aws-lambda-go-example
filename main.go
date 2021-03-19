@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -84,13 +85,13 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		body = base64.StdEncoding.EncodeToString([]byte(err.Error()))
 	} else {
 		bs, _ := ioutil.ReadAll(resp.Body)
-		timestamp := time.Now().Unix()
+		timestamp := strconv.FormatInt(time.Now().Unix(), 10)
 		filename := fmt.Sprintf("%s.png", timestamp)
-		log.Printf("filename:%v\n", filename)
+		log.Printf("filename:%s\n", filename)
 		file, _ := os.Create(filename)
 		io.Copy(file, bytes.NewReader(bs))
 		defer file.Close()
-		w, err := watermark.New("/tmp/watermark.png", 2, watermark.BottomRight)
+		w, err := watermark.New(WATERMARK, 2, watermark.BottomRight)
 		if err != nil {
 			body = err.Error()
 			log.Println("1:出错了:", body)
