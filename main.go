@@ -127,12 +127,13 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	// 保存图片
 	bs, _ := ioutil.ReadAll(resp.Body)
+	log.Println("截取目录名字:", filename)
 	index := strings.LastIndex("/", filename)
 	dir := filename[:index]
 
 	if !Exists(dir) {
-		os.MkdirAll(dir,os.ModePerm)
-		log.Println("创建目录:",dir)
+		os.MkdirAll(dir, os.ModePerm)
+		log.Println("创建目录:", dir)
 	}
 
 	file, _ := os.Create(filename)
