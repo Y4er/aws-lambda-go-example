@@ -127,6 +127,14 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	// 保存图片
 	bs, _ := ioutil.ReadAll(resp.Body)
+	index := strings.LastIndex("/", filename)
+	dir := filename[:index]
+
+	if !Exists(dir) {
+		os.MkdirAll(dir,os.ModePerm)
+		log.Println("创建目录:",dir)
+	}
+
 	file, _ := os.Create(filename)
 	defer file.Close()
 	written, err := io.Copy(file, bytes.NewReader(bs))
