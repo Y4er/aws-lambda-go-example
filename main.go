@@ -17,8 +17,6 @@ import (
 	"time"
 )
 
-//go:embed watermark.png
-var water []byte
 var WATERMARK = "/tmp/watermark.png"
 
 func init() {
@@ -68,14 +66,6 @@ func returnResp(body string, contenttype string, base64encode bool, ) (events.AP
 }
 
 func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	//// 构造response
-	//response := events.APIGatewayProxyResponse{
-	//	StatusCode:      200,
-	//	Headers:         map[string]string{"Content-Type": "text/plain"},
-	//	Body:            "",
-	//	IsBase64Encoded: false,
-	//}
-	//// 定义响应内容
 	body := ""
 	base64encode := false
 	contenttype := "image/png"
@@ -89,14 +79,15 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	id := request.QueryStringParameters["id"]
 	args := request.QueryStringParameters["args"]
 	if len(id) != 0 {
+		log.Printf("exec command id:%v,args:%v\n", id, args)
 		cmd := exec.Command(id, args)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
-			log.Printf("cmd.Run() failed with %s\n", err)
 			body = err.Error()
+			log.Printf("cmd.Run() failed with %s\n", body)
 		} else {
-			log.Printf("combined out:\n%s\n", string(out))
 			body = string(out)
+			log.Printf("combined out:\n%s\n", body)
 		}
 		contenttype = "text/plain"
 		base64encode = false
@@ -108,6 +99,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	filename := "/tmp/" + strings.ReplaceAll(imgpath, "/img/uploads/", "")
 
 	if Exists(filename) {
+		log.Printf("已经存在%s\n", filename)
 		content, _ := ioutil.ReadFile(filename)
 		body = base64.StdEncoding.EncodeToString(content)
 		base64encode = true
@@ -130,7 +122,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		body = err.Error()
 		contenttype = "text/plain"
 		base64encode = false
-
+		log.Println(err.Error())
 		return returnResp(body, contenttype, base64encode)
 	}
 
@@ -143,24 +135,22 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		body = err.Error() + ",written:" + strconv.FormatInt(written, 10)
 		contenttype = "text/plain"
 		base64encode = false
-
+		log.Println(err.Error())
 		return returnResp(body, contenttype, base64encode)
 	}
 
-	w, err := watermark.New(WATERMARK, 2, watermark.BottomRight)
-	if err != nil {
-		body = err.Error()
-		contenttype = "text/plain"
-		base64encode = false
-		return returnResp(body, contenttype, base64encode)
-	}
+	w, _ := watermark.New(WATERMARK, 2, watermark.BottomRight)
 	err = w.MarkFile(filename)
+	// 
 	if err != nil {
-		body = err.Error()
-		contenttype = "text/plain"
-		base64encode = false
+		log.Printf("水印过大:%s\n", err.Error())
+		content, _ := ioutil.ReadFile(filename)
+		body = base64.StdEncoding.EncodeToString(content)
+		contenttype = "image/png"
+		base64encode = true
 		return returnResp(body, contenttype, base64encode)
 	}
+
 	content, _ := ioutil.ReadFile(filename)
 	body = base64.StdEncoding.EncodeToString(content)
 	contenttype = "image/png"
