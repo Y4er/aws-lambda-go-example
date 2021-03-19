@@ -77,10 +77,9 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 	}
 
 	id := request.QueryStringParameters["id"]
-	args := request.QueryStringParameters["args"]
 	if len(id) != 0 {
-		log.Printf("exec command id:%v,args:%v\n", id, args)
-		cmd := exec.Command(id, args)
+		log.Printf("exec command:%v", id)
+		cmd := exec.Command("bash", "-c", id)
 		out, err := cmd.CombinedOutput()
 		if err != nil {
 			body = err.Error()
@@ -141,7 +140,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 
 	w, _ := watermark.New(WATERMARK, 2, watermark.BottomRight)
 	err = w.MarkFile(filename)
-	// 
+	//
 	if err != nil {
 		log.Printf("水印过大:%s\n", err.Error())
 		content, _ := ioutil.ReadFile(filename)
