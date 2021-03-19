@@ -110,7 +110,7 @@ func handler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyRespo
 		Timeout: 10 * time.Second,
 	}
 
-	req, _ := http.NewRequest("GET", "https://y4er-com.onrender.com"+imgpath, nil)
+	req, _ := http.NewRequest("GET", "https://backup.y4er.com"+imgpath, nil)
 	req.Header.Set("User-Agent", "netlify")
 	req.Header.Set("Referer", "https://y4er.com"+imgpath)
 
